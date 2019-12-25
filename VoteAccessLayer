@@ -1,0 +1,54 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataAccessLayer
+{
+   public class VoteAccessLayer
+    {
+       Connection con = new Connection();
+
+       public static void AddVote(tblvote vote)
+       {
+           try
+           {
+               using(var objdata=new DataClasses1DataContext())
+               {
+                   vote.IsActive = true;
+                   vote.Crdt = DateTime.Now;
+                   objdata.tblvotes.InsertOnSubmit(vote);
+                   objdata.SubmitChanges();
+               }
+           }
+           catch(Exception ex)
+           {
+               throw ex;
+           }
+       }
+
+       public IQueryable<tblvote>CheckIfAlreadyVoted(int UserId)
+       {
+           var q = con.da.tblvotes.Where(x => x.IsActive == true && x.UserId == UserId);
+           return q;
+       }
+
+       public Array JoinVoteTableWithCandidateTable(int UserId)
+       {
+           var q = from V in con.da.tblvotes
+                   join C in con.da.tblCandidates on V.CandidateId equals C.Id
+                   where V.IsActive == true && V.UserId == UserId
+                   select new
+                   {
+                       C.Party,
+                       C.CandidateName,
+                       C.Symbol,
+                       C.Constituency,
+                       C.WardNo,
+                       V.Crdt
+                   };
+           return q.ToArray();
+       }
+    }
+}
